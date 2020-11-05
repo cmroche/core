@@ -8,7 +8,7 @@ from .const import DOMAIN
 
 async def _async_has_devices(hass) -> bool:
     """Return if there are devices that can be discovered."""
-    devices = await DeviceHelper.find_devices()
+    devices = await DeviceHelper.find_devices(force_update=True)
     return len(devices) > 0
 
 

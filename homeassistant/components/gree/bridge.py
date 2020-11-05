@@ -1,4 +1,5 @@
 """Helper and wrapper classes for Gree module."""
+from time import monotonic
 from typing import List
 
 from greeclimate.device import Device, DeviceInfo
@@ -7,9 +8,14 @@ from greeclimate.exceptions import DeviceNotBoundError
 
 from homeassistant import exceptions
 
+from .const import DISCOVERY_REFRESH_TIME
+
 
 class DeviceHelper:
     """Device search and bind wrapper for Gree platform."""
+
+    next_discovery_time = 0.0
+    last_discovered_devices = []
 
     @staticmethod
     async def try_bind_device(device_info: DeviceInfo) -> Device:
@@ -26,9 +32,14 @@ class DeviceHelper:
         return device
 
     @staticmethod
-    async def find_devices() -> List[DeviceInfo]:
+    async def find_devices(force_update: bool = False) -> List[DeviceInfo]:
         """Gather a list of device infos from the local network."""
-        return await Discovery.search_devices()
+
+        if force_update or monotonic() >= DeviceHelper.next_discovery_time:
+            DeviceHelper.next_discovery_time = monotonic() + DISCOVERY_REFRESH_TIME
+            DeviceHelper.last_discovered_devices = await Discovery.search_devices()
+
+        return DeviceHelper.last_discovered_devices
 
 
 class CannotConnect(exceptions.HomeAssistantError):

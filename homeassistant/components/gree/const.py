@@ -1,5 +1,6 @@
 """Constants for the Gree Climate integration."""
 
+DISCOVERY_REFRESH_TIME = 120
 DOMAIN = "gree"
 
 FAN_MEDIUM_LOW = "medium low"

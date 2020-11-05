@@ -36,6 +36,7 @@ from homeassistant.components.climate.const import (
     SWING_OFF,
     SWING_VERTICAL,
 )
+from homeassistant.components.gree.bridge import DeviceHelper
 from homeassistant.components.gree.climate import (
     FAN_MODES_REVERSE,
     HVAC_MODES_REVERSE,
@@ -79,6 +80,8 @@ async def async_setup_gree(hass):
 
 async def test_discovery_called_once(hass, discovery, device):
     """Test discovery is only ever called once."""
+    DeviceHelper.next_discovery_time = 0.0
+
     await async_setup_gree(hass)
     assert discovery.call_count == 1
 
@@ -98,6 +101,8 @@ async def test_discovery_setup(hass, discovery, device):
     discovery.return_value = [MockDevice1.device_info, MockDevice2.device_info]
     device.side_effect = [MockDevice1, MockDevice2]
 
+    DeviceHelper.next_discovery_time = 0.0
+
     await async_setup_gree(hass)
     await hass.async_block_till_done()
     assert discovery.call_count == 1
@@ -113,6 +118,8 @@ async def test_discovery_setup_connection_error(hass, discovery, device):
     MockDevice2.bind = AsyncMock(side_effect=DeviceNotBoundError)
 
     device.side_effect = [MockDevice1, MockDevice2]
+
+    DeviceHelper.next_discovery_time = 0.0
 
     await async_setup_gree(hass)
     await hass.async_block_till_done()
