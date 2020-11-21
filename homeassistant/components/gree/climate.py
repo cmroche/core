@@ -10,7 +10,7 @@ from greeclimate.device import (
     VerticalSwing,
 )
 
-from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN, ClimateEntity
+from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     FAN_AUTO,
     FAN_HIGH,
@@ -42,10 +42,14 @@ from homeassistant.const import (
     TEMP_CELSIUS,
     TEMP_FAHRENHEIT,
 )
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
+    COORDINATORS,
+    DISPATCH_DEVICE_DISCOVERED,
     DOMAIN,
     FAN_MEDIUM_HIGH,
     FAN_MEDIUM_LOW,
@@ -95,9 +99,14 @@ SUPPORTED_FEATURES = (
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Gree HVAC device from a config entry."""
-    async_add_entities(
-        [GreeClimateEntity(device) for device in hass.data[DOMAIN].pop(CLIMATE_DOMAIN)]
-    )
+
+    @callback
+    def init_device(coordinator):
+        """Register the device."""
+        async_add_entities([GreeClimateEntity(coordinator)])
+
+    [init_device(coordinator) for coordinator in hass.data[DOMAIN].get(COORDINATORS)]
+    async_dispatcher_connect(hass, DISPATCH_DEVICE_DISCOVERED, init_device)
 
 
 class GreeClimateEntity(CoordinatorEntity, ClimateEntity):

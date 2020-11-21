@@ -2,24 +2,27 @@
 import logging
 from typing import Optional
 
-from homeassistant.components.switch import (
-    DEVICE_CLASS_SWITCH,
-    DOMAIN as SWITCH_DOMAIN,
-    SwitchEntity,
-)
+from homeassistant.components.switch import DEVICE_CLASS_SWITCH, SwitchEntity
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import COORDINATORS, DISPATCH_DEVICE_DISCOVERED, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Gree HVAC device from a config entry."""
-    async_add_entities(
-        [GreeSwitchEntity(device) for device in hass.data[DOMAIN].pop(SWITCH_DOMAIN)]
-    )
+
+    @callback
+    def init_device(coordinator):
+        """Register the device."""
+        async_add_entities([GreeSwitchEntity(coordinator)])
+
+    [init_device(coordinator) for coordinator in hass.data[DOMAIN].get(COORDINATORS)]
+    async_dispatcher_connect(hass, DISPATCH_DEVICE_DISCOVERED, init_device)
 
 
 class GreeSwitchEntity(CoordinatorEntity, SwitchEntity):
