@@ -109,6 +109,11 @@ class DeviceDataUpdateCoordinator(DataUpdateCoordinator):
         self._device.target_temperature = value
 
     @property
+    def current_temperature(self) -> int:
+        """Return the current temperature for the device."""
+        return self._device.current_temperature
+
+    @property
     def power(self) -> bool:
         """Return the power state of the device."""
         return self._device.power
