@@ -203,6 +203,36 @@ class DeviceDataUpdateCoordinator(DataUpdateCoordinator):
         """Set power saving mode enabled/disabled on the device."""
         self._device.power_save = value
 
+    @property
+    def quiet(self) -> bool:
+        """Get quiet mode enabled on the device."""
+        return self._device.quiet
+
+    @quiet.setter
+    def quiet(self, value: bool):
+        """Set quiet mode enabled/disabled on the device."""
+        self._device.quiet = value
+
+    @property
+    def xfan(self) -> bool:
+        """Get xfan mode enabled on the device."""
+        return self._device.xfan
+
+    @xfan.setter
+    def xfan(self, value: bool):
+        """Set xfan mode enabled/disabled on the device."""
+        self._device.xfan = value
+
+    @property
+    def fresh_air(self) -> bool:
+        """Get fresh_air mode enabled on the device."""
+        return self._device.fresh_air
+
+    @fresh_air.setter
+    def fresh_air(self, value: bool):
+        """Set fresh_air mode enabled/disabled on the device."""
+        self._device.fresh_air = value
+
 
 class DiscoveryService(Listener):
     """Discovery event handler for gree devices."""

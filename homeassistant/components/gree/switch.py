@@ -4,11 +4,10 @@ from typing import Optional
 
 from homeassistant.components.switch import DEVICE_CLASS_SWITCH, SwitchEntity
 from homeassistant.core import callback
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import COORDINATORS, DISPATCH_DEVICE_DISCOVERED, DOMAIN
+from .entity import GreeEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,47 +18,31 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     @callback
     def init_device(coordinator):
         """Register the device."""
-        async_add_entities([GreeSwitchEntity(coordinator)])
+        async_add_entities(
+            [
+                GreePanelLightSwitchEntity(coordinator),
+                GreeQuietModeSwitchEntity(coordinator),
+                GreeFreshAirSwitchEntity(coordinator),
+                GreeXFanSwitchEntity(coordinator),
+                GreeTurboSwitchEntity(coordinator),
+            ]
+        )
 
     [init_device(x) for x in hass.data[DOMAIN][COORDINATORS]]
     async_dispatcher_connect(hass, DISPATCH_DEVICE_DISCOVERED, init_device)
 
 
-class GreeSwitchEntity(CoordinatorEntity, SwitchEntity):
-    """Representation of a Gree HVAC device."""
+class GreePanelLightSwitchEntity(GreeEntity, SwitchEntity):
+    """Representation of the front panel light on the device."""
 
     def __init__(self, device):
         """Initialize the Gree device."""
-        super().__init__(device)
-        self._device = device
-        self._name = device.device_info.name + " Panel Light"
-        self._mac = device.device_info.mac
-        self._icon = "mdi:lightbulb"
-
-    @property
-    def name(self) -> str:
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique id for the device."""
-        return f"{self._mac}-panel-light"
+        super().__init__(device, "Panel Light")
 
     @property
     def icon(self) -> Optional[str]:
         """Return the icon for the device."""
-        return self._icon
-
-    @property
-    def device_info(self):
-        """Return device specific attributes."""
-        return {
-            "name": self._name,
-            "identifiers": {(DOMAIN, self._mac)},
-            "manufacturer": "Gree",
-            "connections": {(CONNECTION_NETWORK_MAC, self._mac)},
-        }
+        return "mdi:lightbulb"
 
     @property
     def device_class(self):
@@ -69,16 +52,136 @@ class GreeSwitchEntity(CoordinatorEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return if the light is turned on."""
-        return self._device.light
+        return self.device.light
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
-        self._device.light = True
-        await self._device.push_state_update()
+        self.device.light = True
+        await self.device.push_state_update()
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
-        self._device.light = False
-        await self._device.push_state_update()
+        self.device.light = False
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+
+class GreeQuietModeSwitchEntity(GreeEntity, SwitchEntity):
+    """Representation of the quiet mode state of the device."""
+
+    def __init__(self, device):
+        """Initialize the Gree device."""
+        super().__init__(device, "Quiet Mode")
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_SWITCH
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the state is turned on."""
+        return self.device.quiet
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self.device.quiet = True
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self.device.quiet = False
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+
+class GreeFreshAirSwitchEntity(GreeEntity, SwitchEntity):
+    """Representation of the fresh air mode state of the device."""
+
+    def __init__(self, device):
+        """Initialize the Gree device."""
+        super().__init__(device, "Fresh Air")
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_SWITCH
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the state is turned on."""
+        return self.device.fresh_air
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self.device.fresh_air = True
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self.device.fresh_air = False
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+
+class GreeXFanSwitchEntity(GreeEntity, SwitchEntity):
+    """Representation of the extra fan mode state of the device."""
+
+    def __init__(self, device):
+        """Initialize the Gree device."""
+        super().__init__(device, "XFan")
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_SWITCH
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the state is turned on."""
+        return self.device.xfan
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self.device.xfan = True
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self.device.xfan = False
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+
+class GreeTurboSwitchEntity(GreeEntity, SwitchEntity):
+    """Representation of the turbo mode state of the device."""
+
+    def __init__(self, device):
+        """Initialize the Gree device."""
+        super().__init__(device, "Turbo")
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_SWITCH
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the state is turned on."""
+        return self.device.turbo
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self.device.turbo = True
+        await self.device.push_state_update()
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self.device.turbo = False
+        await self.device.push_state_update()
         self.async_write_ha_state()
