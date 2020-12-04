@@ -72,7 +72,7 @@ class GreeQuietModeSwitchEntity(GreeEntity, SwitchEntity):
 
     def __init__(self, device):
         """Initialize the Gree device."""
-        super().__init__(device, "Quiet Mode")
+        super().__init__(device, "Quiet")
 
     @property
     def device_class(self):

@@ -21,7 +21,11 @@ import homeassistant.util.dt as dt_util
 from tests.async_mock import patch
 from tests.common import MockConfigEntry, async_fire_time_changed
 
-ENTITY_ID = f"{DOMAIN}.fake_device_1_panel_light"
+ENTITY_ID_LIGHT_PANEL = f"{DOMAIN}.fake_device_1_panel_light"
+ENTITY_ID_QUIET = f"{DOMAIN}.fake_device_1_quiet"
+ENTITY_ID_FRESH_AIR = f"{DOMAIN}.fake_device_1_fresh_air"
+ENTITY_ID_XFAN = f"{DOMAIN}.fake_device_1_xfan"
+ENTITY_ID_TURBO = f"{DOMAIN}.fake_device_1_turbo"
 
 
 @pytest.fixture
@@ -37,7 +41,17 @@ async def async_setup_gree(hass):
     await hass.async_block_till_done()
 
 
-async def test_send_panel_light_on(hass, mock_now):
+@pytest.mark.parametrize(
+    "entity",
+    [
+        ENTITY_ID_LIGHT_PANEL,
+        ENTITY_ID_QUIET,
+        ENTITY_ID_FRESH_AIR,
+        ENTITY_ID_XFAN,
+        ENTITY_ID_TURBO,
+    ],
+)
+async def test_send_switch_on(hass, mock_now, entity):
     """Test for sending power on command to the device."""
     await async_setup_gree(hass)
 
@@ -49,16 +63,26 @@ async def test_send_panel_light_on(hass, mock_now):
     assert await hass.services.async_call(
         DOMAIN,
         SERVICE_TURN_ON,
-        {ATTR_ENTITY_ID: ENTITY_ID},
+        {ATTR_ENTITY_ID: entity},
         blocking=True,
     )
 
-    state = hass.states.get(ENTITY_ID)
+    state = hass.states.get(entity)
     assert state is not None
     assert state.state == STATE_ON
 
 
-async def test_send_panel_light_on_device_timeout(hass, device, mock_now):
+@pytest.mark.parametrize(
+    "entity",
+    [
+        ENTITY_ID_LIGHT_PANEL,
+        ENTITY_ID_QUIET,
+        ENTITY_ID_FRESH_AIR,
+        ENTITY_ID_XFAN,
+        ENTITY_ID_TURBO,
+    ],
+)
+async def test_send_switch_on_device_timeout(hass, device, mock_now, entity):
     """Test for sending power on command to the device with a device timeout."""
     device().push_state_update.side_effect = DeviceTimeoutError
 
@@ -72,16 +96,26 @@ async def test_send_panel_light_on_device_timeout(hass, device, mock_now):
     assert await hass.services.async_call(
         DOMAIN,
         SERVICE_TURN_ON,
-        {ATTR_ENTITY_ID: ENTITY_ID},
+        {ATTR_ENTITY_ID: entity},
         blocking=True,
     )
 
-    state = hass.states.get(ENTITY_ID)
+    state = hass.states.get(entity)
     assert state is not None
     assert state.state == STATE_ON
 
 
-async def test_send_panel_light_off(hass, mock_now):
+@pytest.mark.parametrize(
+    "entity",
+    [
+        ENTITY_ID_LIGHT_PANEL,
+        ENTITY_ID_QUIET,
+        ENTITY_ID_FRESH_AIR,
+        ENTITY_ID_XFAN,
+        ENTITY_ID_TURBO,
+    ],
+)
+async def test_send_switch_off(hass, mock_now, entity):
     """Test for sending power on command to the device."""
     await async_setup_gree(hass)
 
@@ -93,16 +127,26 @@ async def test_send_panel_light_off(hass, mock_now):
     assert await hass.services.async_call(
         DOMAIN,
         SERVICE_TURN_OFF,
-        {ATTR_ENTITY_ID: ENTITY_ID},
+        {ATTR_ENTITY_ID: entity},
         blocking=True,
     )
 
-    state = hass.states.get(ENTITY_ID)
+    state = hass.states.get(entity)
     assert state is not None
     assert state.state == STATE_OFF
 
 
-async def test_send_panel_light_toggle(hass, mock_now):
+@pytest.mark.parametrize(
+    "entity",
+    [
+        ENTITY_ID_LIGHT_PANEL,
+        ENTITY_ID_QUIET,
+        ENTITY_ID_FRESH_AIR,
+        ENTITY_ID_XFAN,
+        ENTITY_ID_TURBO,
+    ],
+)
+async def test_send_switch_toggle(hass, mock_now, entity):
     """Test for sending power on command to the device."""
     await async_setup_gree(hass)
 
@@ -115,11 +159,11 @@ async def test_send_panel_light_toggle(hass, mock_now):
     assert await hass.services.async_call(
         DOMAIN,
         SERVICE_TURN_ON,
-        {ATTR_ENTITY_ID: ENTITY_ID},
+        {ATTR_ENTITY_ID: entity},
         blocking=True,
     )
 
-    state = hass.states.get(ENTITY_ID)
+    state = hass.states.get(entity)
     assert state is not None
     assert state.state == STATE_ON
 
@@ -127,11 +171,11 @@ async def test_send_panel_light_toggle(hass, mock_now):
     assert await hass.services.async_call(
         DOMAIN,
         SERVICE_TOGGLE,
-        {ATTR_ENTITY_ID: ENTITY_ID},
+        {ATTR_ENTITY_ID: entity},
         blocking=True,
     )
 
-    state = hass.states.get(ENTITY_ID)
+    state = hass.states.get(entity)
     assert state is not None
     assert state.state == STATE_OFF
 
@@ -139,17 +183,27 @@ async def test_send_panel_light_toggle(hass, mock_now):
     assert await hass.services.async_call(
         DOMAIN,
         SERVICE_TOGGLE,
-        {ATTR_ENTITY_ID: ENTITY_ID},
+        {ATTR_ENTITY_ID: entity},
         blocking=True,
     )
 
-    state = hass.states.get(ENTITY_ID)
+    state = hass.states.get(entity)
     assert state is not None
     assert state.state == STATE_ON
 
 
-async def test_panel_light_name(hass):
+@pytest.mark.parametrize(
+    "entity,name",
+    [
+        (ENTITY_ID_LIGHT_PANEL, "Panel Light"),
+        (ENTITY_ID_QUIET, "Quiet"),
+        (ENTITY_ID_FRESH_AIR, "Fresh Air"),
+        (ENTITY_ID_XFAN, "XFan"),
+        (ENTITY_ID_TURBO, "Turbo"),
+    ],
+)
+async def test_entity_name(hass, entity, name):
     """Test for name property."""
     await async_setup_gree(hass)
-    state = hass.states.get(ENTITY_ID)
-    assert state.attributes[ATTR_FRIENDLY_NAME] == "fake-device-1 Panel Light"
+    state = hass.states.get(entity)
+    assert state.attributes[ATTR_FRIENDLY_NAME] == f"fake-device-1 {name}"
