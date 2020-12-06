@@ -4,7 +4,7 @@
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/gree",
   "requirements": [
-    "greeclimate==0.11.3"
+    "greeclimate==0.11.4"
   ],
   "codeowners": [
     "@cmroche"
