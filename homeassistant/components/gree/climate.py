@@ -154,8 +154,8 @@ class GreeClimateEntity(CoordinatorEntity, ClimateEntity):
 
     @property
     def current_temperature(self) -> float:
-        """Return the target temperature, gree devices don't provide internal temp."""
-        return self._device.current_temperature
+        """Return the current temperature from the device."""
+        return self._coordo.device.current_temperature
 
     @property
     def target_temperature(self) -> float:
