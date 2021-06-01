@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 UPDATE_INTERVAL = timedelta(seconds=30)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Rituals Perfume Genie from a config entry."""
     session = async_get_clientsession(hass)
     account = Account(EMPTY_CREDENTIALS, EMPTY_CREDENTIALS, session)
@@ -41,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     for device in account_devices:
         hublot = device.hub_data[HUBLOT]
 
-        coordinator = RitualsPerufmeGenieDataUpdateCoordinator(hass, device)
+        coordinator = RitualsDataUpdateCoordinator(hass, device)
         await coordinator.async_refresh()
 
         hass.data[DOMAIN][entry.entry_id][DEVICES][hublot] = device
@@ -61,10 +61,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     return unload_ok
 
 
-class RitualsPerufmeGenieDataUpdateCoordinator(DataUpdateCoordinator):
+class RitualsDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Rituals Perufme Genie device data from single endpoint."""
 
-    def __init__(self, hass: HomeAssistant, device: Diffuser):
+    def __init__(self, hass: HomeAssistant, device: Diffuser) -> None:
         """Initialize global Rituals Perufme Genie data updater."""
         self._device = device
         super().__init__(

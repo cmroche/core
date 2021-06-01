@@ -1,12 +1,15 @@
 """Shelly entity helper."""
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 import logging
 from typing import Any, Callable
 
 import aioshelly
+import async_timeout
 
+from homeassistant.components.sensor import ATTR_STATE_CLASS
 from homeassistant.core import callback
 from homeassistant.helpers import (
     device_registry,
@@ -17,7 +20,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import ShellyDeviceRestWrapper, ShellyDeviceWrapper
-from .const import COAP, DATA_CONFIG_ENTRY, DOMAIN, REST
+from .const import AIOSHELLY_DEVICE_TIMEOUT_SEC, COAP, DATA_CONFIG_ENTRY, DOMAIN, REST
 from .utils import async_remove_shelly_entity, get_entity_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -149,6 +152,7 @@ class BlockAttributeDescription:
     unit: None | str | Callable[[dict], str] = None
     value: Callable[[Any], Any] = lambda val: val
     device_class: str | None = None
+    state_class: str | None = None
     default_enabled: bool = True
     available: Callable[[aioshelly.Block], bool] | None = None
     # Callable (settings, block), return true if entity should be removed
@@ -165,6 +169,7 @@ class RestAttributeDescription:
     unit: str | None = None
     value: Callable[[dict, Any], Any] | None = None
     device_class: str | None = None
+    state_class: str | None = None
     default_enabled: bool = True
     extra_state_attributes: Callable[[dict], dict | None] | None = None
 
@@ -176,7 +181,7 @@ class ShellyBlockEntity(entity.Entity):
         """Initialize Shelly entity."""
         self.wrapper = wrapper
         self.block = block
-        self._name = get_entity_name(wrapper.device, block)
+        self._name: str | None = get_entity_name(wrapper.device, block)
 
     @property
     def name(self):
@@ -217,6 +222,22 @@ class ShellyBlockEntity(entity.Entity):
     def _update_callback(self):
         """Handle device update."""
         self.async_write_ha_state()
+
+    async def set_state(self, **kwargs):
+        """Set block state (HTTP request)."""
+        _LOGGER.debug("Setting state for entity %s, state: %s", self.name, kwargs)
+        try:
+            async with async_timeout.timeout(AIOSHELLY_DEVICE_TIMEOUT_SEC):
+                return await self.block.set_state(**kwargs)
+        except (asyncio.TimeoutError, OSError) as err:
+            _LOGGER.error(
+                "Setting state for entity %s failed, state: %s, error: %s",
+                self.name,
+                kwargs,
+                repr(err),
+            )
+            self.wrapper.last_update_success = False
+            return None
 
 
 class ShellyBlockAttributeEntity(ShellyBlockEntity, entity.Entity):
@@ -410,6 +431,7 @@ class ShellySleepingBlockAttributeEntity(ShellyBlockAttributeEntity, RestoreEnti
 
         if last_state is not None:
             self.last_state = last_state.state
+            self.description.state_class = last_state.attributes.get(ATTR_STATE_CLASS)
 
     @callback
     def _update_callback(self):
