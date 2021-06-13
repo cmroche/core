@@ -5,6 +5,7 @@ import datetime
 import logging
 
 from pysonos.core import SoCo
+from pysonos.exceptions import SoCoException
 
 import homeassistant.helpers.device_registry as dr
 from homeassistant.helpers.dispatcher import (
@@ -63,14 +64,18 @@ class SonosEntity(Entity):
 
     async def async_poll(self, now: datetime.datetime) -> None:
         """Poll the entity if subscriptions fail."""
-        if self.speaker.is_first_poll:
+        if not self.speaker.subscriptions_failed:
             _LOGGER.warning(
                 "%s cannot reach [%s], falling back to polling, functionality may be limited",
                 self.speaker.zone_name,
                 self.speaker.subscription_address,
             )
-            self.speaker.is_first_poll = False
-        await self.async_update()  # pylint: disable=no-member
+            self.speaker.subscriptions_failed = True
+            await self.speaker.async_unsubscribe()
+        try:
+            await self.async_update()  # pylint: disable=no-member
+        except (OSError, SoCoException) as ex:
+            _LOGGER.debug("Error connecting to %s: %s", self.entity_id, ex)
 
     @property
     def soco(self) -> SoCo:
