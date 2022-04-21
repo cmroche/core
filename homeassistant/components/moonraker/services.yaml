@@ -1,0 +1,23 @@
+# Services for Moonraker API integration
+
+# Call GCode commands
+run_gcode:
+  name: Run GCode
+  description: Runs the given GCode commands on the printer.
+  fields:
+    device_id:
+      name: Printer
+      description: The Moonraker device
+      selector:
+        device:
+          integration: moonraker
+    gcode:
+      name: GCode
+      description: GCode commands to run on the printer.
+      required: true
+      advanced: true
+      example: "low"
+      default: ""
+      selector:
+        text:
+          multiline: true
