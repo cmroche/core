@@ -9,5 +9,4 @@ components:
   image:
     imageName: my-image:latest
     dockerfile:
-      buildContext: docker
       uri: Dockerfile.dev
