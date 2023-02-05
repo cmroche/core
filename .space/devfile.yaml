@@ -7,7 +7,7 @@ attributes:
 components:
 - name: image-build
   image:
-  	imageName: my-image:latest
-  	dockerfile:
-    	buildContext: docker
-    	uri: Dockerfile.dev
+    imageName: my-image:latest
+    dockerfile:
+      buildContext: docker
+      uri: Dockerfile.dev
