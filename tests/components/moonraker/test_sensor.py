@@ -6,6 +6,7 @@ import pytest
 
 from homeassistant.components.moonraker.connector import generate_signal
 from homeassistant.components.moonraker.const import (
+    DOMAIN,
     SIGNAL_UPDATE_EXTRUDER,
     SIGNAL_UPDATE_HEAT_BED,
     SIGNAL_UPDATE_PRINT_STATUS,
@@ -22,8 +23,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-
-from .const import DOMAIN
 
 from tests.common import MockConfigEntry
 

@@ -1,6 +1,7 @@
 """Test the moonraker config flow."""
 import asyncio
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 from moonraker_api.websockets.websocketclient import ClientNotAuthenticatedError
@@ -68,6 +69,19 @@ def moonraker_client() -> Generator:
 
 
 def get_mock_service_info() -> zeroconf.ZeroconfServiceInfo:
+    """Get a mock service info object."""
+    return zeroconf.ZeroconfServiceInfo(
+        host="192.168.43.183",
+        addresses=["192.168.43.183"],
+        port=7120,
+        hostname="test-host.local.",
+        type="_moonraker._tcp.local.",
+        name="Moonraker Instance",
+        properties={"unique_id": "abcdefg123456"},
+    )
+
+
+def get_mock_service_info_no_id() -> zeroconf.ZeroconfServiceInfo:
     """Get a mock service info object."""
     return zeroconf.ZeroconfServiceInfo(
         host="192.168.43.183",
@@ -334,6 +348,24 @@ async def test_discovery_already_configured_ip(
 
     assert result["type"] == RESULT_TYPE_ABORT
     assert result["reason"] == "already_configured"
+
+
+async def test_discovery_duplicate_data_no_id(
+    hass: HomeAssistant, moonraker_client: Mock
+) -> None:
+    """Test discovery aborts if same mDNS packet arrives."""
+    service_info = get_mock_service_info_no_id()
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, data=service_info, context={"source": config_entries.SOURCE_ZEROCONF}
+    )
+    assert result["type"] == RESULT_TYPE_FORM
+    assert result["step_id"] == "user"
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, data=service_info, context={"source": config_entries.SOURCE_ZEROCONF}
+    )
+    assert result["type"] == RESULT_TYPE_ABORT
+    assert result["reason"] == "already_in_progress"
 
 
 async def test_discovery_duplicate_data(

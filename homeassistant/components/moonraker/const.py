@@ -4,8 +4,6 @@ BACKOFF_TIME_UPPER_LIMIT = 120
 BACKOFF_TIME_LOWER_LIMIT = 30
 BACKOFF_MAX_COUNT = 10
 
-DATA_CONNECTOR = "moonraker_data_connector"
-
 DOMAIN = "moonraker"
 
 SIGNAL_UPDATE_TOOLHEAD = "moonraker_update_toolhead"

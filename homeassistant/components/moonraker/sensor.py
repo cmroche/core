@@ -14,14 +14,13 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, TEMP_CELSIUS
+from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .connector import APIConnector, generate_signal
 from .const import (
-    DATA_CONNECTOR,
     DOMAIN,
     SIGNAL_UPDATE_EXTRUDER,
     SIGNAL_UPDATE_HEAT_BED,
@@ -39,7 +38,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the available Moonraker entities."""
-    connector: APIConnector = hass.data[DOMAIN][config_entry.entry_id][DATA_CONNECTOR]
+    connector: APIConnector = hass.data[DOMAIN][config_entry.entry_id]
     entities: list[SensorEntity] = [
         MoonrakerGenericSensor(config_entry, connector, x) for x in SENSOR_TYPES
     ]
@@ -67,7 +66,7 @@ SENSOR_TYPES = (
         value=lambda params: round(params["temperature"], 1),
         entity_registry_enabled_default=True,
         device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:printer-3d-nozzle",
     ),
@@ -78,7 +77,7 @@ SENSOR_TYPES = (
         value=lambda params: round(params["target"], 1),
         entity_registry_enabled_default=True,
         device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:printer-3d-nozzle",
     ),
@@ -89,7 +88,7 @@ SENSOR_TYPES = (
         value=lambda params: round(params["temperature"], 1),
         entity_registry_enabled_default=True,
         device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:radiator",
     ),
@@ -100,7 +99,7 @@ SENSOR_TYPES = (
         value=lambda params: round(params["target"], 1),
         entity_registry_enabled_default=True,
         device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:radiator",
     ),

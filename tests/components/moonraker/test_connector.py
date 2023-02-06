@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from aiohttp import ClientConnectionError
@@ -17,15 +18,13 @@ import pytest
 from homeassistant import data_entry_flow
 from homeassistant.components.moonraker.connector import APIConnector, generate_signal
 from homeassistant.components.moonraker.const import (
-    DATA_CONNECTOR,
+    DOMAIN,
     SIGNAL_STATE_AVAILABLE,
     SIGNAL_UPDATE_MODULE,
 )
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_PORT, CONF_SSL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-
-from .const import DOMAIN
 
 from tests.common import MockConfigEntry
 
@@ -120,7 +119,7 @@ async def setup_and_connect(
     await setup_entry(hass, entry)
     moonraker_client.start()
 
-    return hass.data[DOMAIN][entry.entry_id][DATA_CONNECTOR]
+    return hass.data[DOMAIN][entry.entry_id]
 
 
 async def test_generated_signals_are_unique(
@@ -147,7 +146,7 @@ async def test_start_stop_service_success(
     assert moonraker_client.call_count == 1
     assert moonraker_client.connect.call_count == 1
 
-    connector = hass.data[DOMAIN][entry.entry_id][DATA_CONNECTOR]
+    connector = hass.data[DOMAIN][entry.entry_id]
     assert connector is not None
     assert connector.running is True
 
@@ -221,7 +220,7 @@ async def test_websocket_connected_ready_handler(
     entry = get_mock_entry(hass, HOST_NAME_1)
     await setup_entry(hass, entry)
     moonraker_client.start()
-    connector = hass.data[DOMAIN][entry.entry_id][DATA_CONNECTOR]
+    connector = hass.data[DOMAIN][entry.entry_id]
 
     update_signal = MagicMock()
     update_signal_name = generate_signal(
@@ -250,7 +249,7 @@ async def test_websocket_disconnected_handler(
     entry = get_mock_entry(hass, HOST_NAME_1)
     await setup_entry(hass, entry)
     moonraker_client.start()
-    connector = hass.data[DOMAIN][entry.entry_id][DATA_CONNECTOR]
+    connector = hass.data[DOMAIN][entry.entry_id]
 
     status_signal = MagicMock()
     status_signal_name = generate_signal(SIGNAL_STATE_AVAILABLE, entry.entry_id)
@@ -305,7 +304,7 @@ async def test_update_notification_handler(
     )
 
     # First call to update with this timestamp will trigger an update
-    connector = hass.data[DOMAIN][entry.entry_id][DATA_CONNECTOR]
+    connector = hass.data[DOMAIN][entry.entry_id]
     await connector.on_notification("notify_status_update", update_data)
     await hass.async_block_till_done()
 
@@ -342,7 +341,7 @@ async def test_notify_klipper_ready_handler(
     entry = get_mock_entry(hass, HOST_NAME_1)
     await setup_entry(hass, entry)
     moonraker_client.start()
-    connector = hass.data[DOMAIN][entry.entry_id][DATA_CONNECTOR]
+    connector = hass.data[DOMAIN][entry.entry_id]
 
     status_signal = MagicMock()
     status_signal_name = generate_signal(SIGNAL_STATE_AVAILABLE, entry.entry_id)

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping
+import contextlib
 import logging
 from typing import Any
 
@@ -23,13 +25,21 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
-def _schema_with_defaults(host="", port=7125, ssl=False, api_key=""):
+def _host_schema_with_defaults(host="", port=7125, ssl=False):
     return vol.Schema(
         {
             vol.Required(CONF_HOST, default=host): str,
             vol.Required(CONF_PORT, default=port): cv.port,
             vol.Required(CONF_SSL, default=ssl): bool,
-            vol.Optional(CONF_API_KEY, default=api_key): str,
+        },
+        extra=vol.ALLOW_EXTRA,
+    )
+
+
+def _api_key_schema_with_defaults(api_key=""):
+    return vol.Schema(
+        {
+            vol.Required(CONF_API_KEY, default=api_key): str,
         },
         extra=vol.ALLOW_EXTRA,
     )
@@ -37,6 +47,8 @@ def _schema_with_defaults(host="", port=7125, ssl=False, api_key=""):
 
 class MoonrakerHub:
     """API shim to validate configuration."""
+
+    api_key_task: asyncio.Task[None] | None = None
 
     def __init__(self, host: str, port: int, ssl: bool, session: ClientSession) -> None:
         """Initialize."""
@@ -47,7 +59,7 @@ class MoonrakerHub:
         self.printer_info: dict[str, Any] = {}
         self.system_info: dict[str, Any] = {}
 
-    async def authenticate(self, api_key: str) -> bool:
+    async def authenticate(self, api_key: str | None) -> bool:
         """Test if we can authenticate with the host."""
         client = MoonrakerClient(
             host=self.host,
@@ -73,7 +85,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     hub = MoonrakerHub(data[CONF_HOST], data[CONF_PORT], data[CONF_SSL], clientsession)
 
     try:
-        if not await hub.authenticate(data[CONF_API_KEY]):
+        if not await hub.authenticate(data.get(CONF_API_KEY)):
             raise CannotConnect
     except ClientNotAuthenticatedError as error:
         raise InvalidAuth from error
@@ -82,10 +94,9 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     # Return info that you want to store in the config entry.
     uuid = None
-    try:
+    with contextlib.suppress(KeyError):
         uuid = hub.system_info["system_info"]["cpu_info"]["serial_number"]
-    except KeyError:
-        pass
+
     return {"title": hub.printer_info.get("hostname"), "unique_id": uuid}
 
 
@@ -93,11 +104,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for moonraker."""
 
     VERSION = 1
-    api_key_task = None
 
     def __init__(self) -> None:
         """Handle a config flow for OctoPrint."""
         self.discovery_schema = None
+        self.user_input: dict[str, str] = {}
         self._reauth_entry: config_entries.ConfigEntry | None = None
 
     @callback
@@ -113,9 +124,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step."""
+
         if user_input is None:
-            data = self.discovery_schema or _schema_with_defaults()
+            data = self.discovery_schema or _host_schema_with_defaults()
             return self.async_show_form(step_id="user", data_schema=data)
+
+        self.user_input.update(user_input)
 
         if user_input[CONF_HOST]:
             if (
@@ -145,13 +159,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(title=info["title"], data=user_input)
 
+            if errors.get("base") == "invalid_api_key":
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=_api_key_schema_with_defaults(user_input[CONF_API_KEY]),
+                    errors=errors,
+                )
+
         return self.async_show_form(
             step_id="user",
-            data_schema=_schema_with_defaults(
+            data_schema=_host_schema_with_defaults(
                 user_input[CONF_HOST],
                 user_input[CONF_PORT],
                 user_input[CONF_SSL],
-                user_input[CONF_API_KEY],
             ),
             errors=errors,
         )
@@ -161,11 +181,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle discovery flow."""
         local_name = discovery_info.hostname[:-1]
+
         node_name = local_name[: -len(".local")]
         address = discovery_info.properties.get("address", discovery_info.host)
 
-        await self.async_set_unique_id(node_name)
-        self._abort_if_unique_id_configured(updates={CONF_HOST: discovery_info.host})
+        # Unique ID isn't always available, so we use the node name as a fallback
+        unique_id = discovery_info.properties.get("unique_id", node_name)
+        await self.async_set_unique_id(unique_id)
+        self._abort_if_unique_id_configured()
 
         if local_name in self._async_current_hosts():
             return self.async_abort(reason="already_configured")
@@ -174,17 +197,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         node_type = f".{discovery_info.type}"
         self.context["title_placeholders"] = {
-            CONF_HOST: local_name,
+            CONF_HOST: node_name,
             CONF_NAME: discovery_info.name[: -len(node_type)],
         }
 
-        self.discovery_schema = _schema_with_defaults(
+        self.discovery_schema = _host_schema_with_defaults(
             host=local_name, port=discovery_info.port
         )
 
         return await self.async_step_user()
 
-    async def async_step_reauth(self, _) -> FlowResult:
+    async def async_step_reauth(self, _: Mapping[str, Any]) -> FlowResult:
         """Handle initial step when updating invalid credentials."""
         self._reauth_entry = self.hass.config_entries.async_get_entry(
             self.context["entry_id"]
@@ -193,7 +216,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.context["title_placeholders"] = {
             CONF_HOST: self._reauth_entry.data[CONF_HOST],
         }
-        self.discovery_schema = _schema_with_defaults(
+        self.discovery_schema = _host_schema_with_defaults(
             host=self._reauth_entry.data[CONF_HOST],
             port=self._reauth_entry.data[CONF_PORT],
             ssl=self._reauth_entry.data[CONF_SSL],
