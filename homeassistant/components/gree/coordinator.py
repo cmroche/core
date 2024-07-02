@@ -24,6 +24,7 @@ from .const import (
     MAX_ERRORS,
     UPDATE_INTERVAL,
 )
+from ...helpers.json import json_dumps
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class DeviceDataUpdateCoordinator(DataUpdateCoordinator):
 
     def device_state_updated(self, *args) -> None:
         """Handle device state updates."""
-        _LOGGER.debug("Device state updated: {json_dumps(args)}")
+        _LOGGER.debug("Device state updated: %s", json_dumps(args))
         self._error_count = 0
         self._last_response_time = utcnow()
         self.async_set_updated_data(self.device.raw_properties)
