@@ -304,6 +304,7 @@ async def test_stop_during_endpoint_creation_closes_late_transport(
     """A delayed library connection cannot reopen scanning after stop."""
     started = asyncio.Event()
     release = asyncio.Event()
+    cancelled = asyncio.Event()
     active = RealDiscovery(DISCOVERY_TIMEOUT)
     discovery.side_effect = [active]
     transport = MagicMock(spec=asyncio.DatagramTransport)
@@ -320,7 +321,11 @@ async def test_stop_during_endpoint_creation_closes_late_transport(
         protocol_factory: Callable[[], RealDiscovery], **kwargs: object
     ) -> tuple[asyncio.DatagramTransport, RealDiscovery]:
         started.set()
-        await release.wait()
+        try:
+            await release.wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            await release.wait()
         protocol = protocol_factory()
         protocol.connection_made(transport)
         assert not transport.is_closing()
@@ -348,6 +353,7 @@ async def test_stop_during_endpoint_creation_closes_late_transport(
         scanner = async_get_discovery(hass)
         scanner.async_stop()
         transport.close.assert_not_called()
+        await cancelled.wait()
         release.set()
         await hass.async_block_till_done(wait_background_tasks=True)
         transport.close.assert_called_once()

@@ -4,10 +4,6 @@ import logging
 from typing import Any, override
 
 from greeclimate.device import (
-    TEMP_MAX,
-    TEMP_MAX_F,
-    TEMP_MIN,
-    TEMP_MIN_F,
     FanSpeed,
     HorizontalSwing,
     Mode,
@@ -34,7 +30,15 @@ from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, UnitOfTempera
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import FAN_MEDIUM_HIGH, FAN_MEDIUM_LOW, TARGET_TEMPERATURE_STEP
+from .const import (
+    FAN_MEDIUM_HIGH,
+    FAN_MEDIUM_LOW,
+    TARGET_TEMPERATURE_STEP,
+    TEMP_MAX,
+    TEMP_MAX_F,
+    TEMP_MIN,
+    TEMP_MIN_F,
+)
 from .coordinator import DeviceDataUpdateCoordinator, GreeConfigEntry
 from .entity import GreeEntity
 

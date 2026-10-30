@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Self, override
 
-from greeclimate.device import Device, DeviceInfo
+from greeclimate.air_conditioner import AirConditionerDevice
+from greeclimate.device import DeviceInfo
 from greeclimate.exceptions import DeviceNotBoundError, DeviceTimeoutError
 import probatio
 
@@ -200,7 +201,7 @@ class GreeConfigFlow(ConfigFlow, domain=DOMAIN):
         if self.source == SOURCE_USER:
             await self.async_set_unique_id(identifier, raise_on_progress=False)
         self._abort_if_unique_id_configured()
-        device = Device(
+        device = AirConditionerDevice(
             DeviceInfo(
                 ip=data[CONF_HOST],
                 port=data[CONF_PORT],

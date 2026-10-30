@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import logging
 from typing import Any, override
 
+from greeclimate.air_conditioner import AirConditionerDevice
 from greeclimate.device import Device, DeviceInfo
 from greeclimate.exceptions import DeviceNotBoundError, DeviceTimeoutError
 from greeclimate.network import Response
@@ -50,7 +51,7 @@ class DeviceDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def __init__(self, hass: HomeAssistant, config_entry: GreeConfigEntry) -> None:
         """Initialize the coordinator from the saved device endpoint."""
         data = config_entry.data
-        self.device = Device(
+        self.device = AirConditionerDevice(
             DeviceInfo(
                 ip=data[CONF_HOST],
                 port=data[CONF_PORT],

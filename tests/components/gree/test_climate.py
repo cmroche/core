@@ -4,14 +4,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from freezegun.api import FrozenDateTimeFactory
-from greeclimate.device import (
-    TEMP_MAX,
-    TEMP_MAX_F,
-    TEMP_MIN,
-    TEMP_MIN_F,
-    HorizontalSwing,
-    VerticalSwing,
-)
+from greeclimate.device import HorizontalSwing, VerticalSwing
 from greeclimate.exceptions import DeviceNotBoundError, DeviceTimeoutError
 from greeclimate.network import Response
 import pytest
@@ -54,6 +47,10 @@ from homeassistant.components.gree.const import (
     FAN_MEDIUM_HIGH,
     FAN_MEDIUM_LOW,
     MAX_EXPECTED_RESPONSE_TIME_INTERVAL,
+    TEMP_MAX,
+    TEMP_MAX_F,
+    TEMP_MIN,
+    TEMP_MIN_F,
     UPDATE_INTERVAL,
 )
 from homeassistant.config_entries import ConfigEntryState
